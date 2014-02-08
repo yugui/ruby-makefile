@@ -1,5 +1,5 @@
-require "makefile/version"
-
 module Makefile
-  # Your code goes here...
+  require "makefile/version"
+  require "makefile/macro"
+  require "makefile/reader"
 end
