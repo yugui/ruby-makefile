@@ -19,30 +19,32 @@ describe Makefile::Reader do
     Makefile::Reader.new(input).read
   end
 
-  describe "#read_element" do
+  describe "#each" do
 
     it "returns a Macro object on read a macro" do
       input = create_input_stub(<<-EOF.lines)
 MACRO1=1
       EOF
 
-      macro = Makefile::Reader.new(input).read_element
+      macro, = *Makefile::Reader.new(input).read
       expect(macro).to be_an_instance_of(Makefile::Macro)
       expect(macro.name).to eq("MACRO1")
       expect(macro.raw_value).to eq("1")
     end
 
-    it "returns nil after read all elements" do
-      expect(
-        Makefile::Reader.new(create_input_stub([])).read_element
-      ).to be_nil
-
+    it "returns a SuffixRule object on read a rule definition" do
       input = create_input_stub(<<-EOF.lines)
-MACRO1=1
+.c.o:
+	$(CC) -c -o $@ $<
       EOF
-      reader = Makefile::Reader.new(input)
-      reader.read_element
-      expect(reader.read_element).to be_nil
+
+      rule, = *Makefile::Reader.new(input).read
+      expect(rule).to be_an_instance_of(Makefile::SuffixRule)
+      expect(rule.source).to eq(".c")
+      expect(rule.target).to eq(".o")
+      expect(rule.commands).to have(1).element
+      expect(rule.commands[0]).to eq(
+        Makefile::Command.new("$(CC) -c -o $@ $<", rule))
     end
 
     it "skips comments" do
@@ -51,13 +53,12 @@ MACRO1=1# test
 # MACRO2=2
       EOF
 
-      reader = Makefile::Reader.new(input)
-      macro = reader.read_element
+      iter = Makefile::Reader.new(input).enum_for(:each)
+      macro = iter.next
       expect(macro).to be_an_instance_of(Makefile::Macro)
       expect(macro.name).to eq("MACRO1")
       expect(macro.raw_value).to eq("1")
-      expect(reader.read_element).to be_nil
+      expect { iter.next }.to raise_error(StopIteration)
     end
-    
   end
 end

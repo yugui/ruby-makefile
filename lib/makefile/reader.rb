@@ -1,4 +1,5 @@
-module Makefile; end
+require 'makefile/command'
+require 'makefile/errors'
 
 class Makefile::Reader
   include Enumerable
@@ -7,23 +8,30 @@ class Makefile::Reader
     @input = input
   end
 
-  def read_element
-    begin
-      line = read_line
-      return if line.nil?
-    end while line.chomp.empty?
-    case line
-    when /\A([[:alpha:]][[:alnum:]]*)=(.*)$/
-      return Makefile::Macro.new($1, $2)
-    else
-      raise NotImplementedError
-    end
-  end
+  def each(&blk)
+    rule = nil
+    while line = read_line
+      next if line.chomp.empty?
+      if line.start_with?("\t")
+        raise Makefile::ParseError, "commands outside of rule at line #{lineno}" unless rule
+        command = Makefile::Command.new(line[1..-1], rule)
+        rule.add_command(command)
+        next
+      else
+        yield rule if rule
+        rule = nil
+      end
 
-  def each
-    while element = read_element
-      yield element
+      case line
+      when /\A([[:alpha:]][[:alnum:]]*)=(.*)$/
+        yield Makefile::Macro.new($1, $2)
+      when /^(\.[^.]+)(\.[^.]+)?:$/
+        rule = Makefile::SuffixRule.new($1, $2)
+      else
+        raise NotImplementedError
+      end
     end
+    yield rule if rule
   end
 
   def read
@@ -40,5 +48,9 @@ class Makefile::Reader
       line << fragment
     end while !@input.eof? and line.end_with?('\\')
     return line
+  end
+
+  def lineno
+    @input.lineno
   end
 end
