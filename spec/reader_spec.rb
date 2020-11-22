@@ -4,23 +4,23 @@ require 'makefile'
 describe Makefile::Reader do
   def create_input_stub(lines)
     lines = lines.dup
-    input = Object.new
-    stub(input).eof? { lines.empty? }
-    stub(input).read_line { lines.shift }
+    input = double('input')
+    allow(input).to receive(:eof?) { lines.empty? }
+    allow(input).to receive(:read_line) { lines.shift }
     input
   end
 
   it "reads input with #read_line" do
     eof = false
-    input = Object.new
-    stub(input).eof? { eof }
-    mock(input).read_line { "a=b\n" }
-    mock(input).read_line { eof = true; "b=c" }
+    input = double('input')
+    allow(input).to receive(:eof?) { eof }
+    expect(input).to receive(:read_line) { "a=b\n" }
+    expect(input).to receive(:read_line) { eof = true; "b=c" }
+
     Makefile::Reader.new(input).read
   end
 
   describe "#each" do
-
     it "returns a Macro object on read a macro" do
       input = create_input_stub(<<-EOF.lines)
 MACRO1=1
@@ -42,9 +42,9 @@ MACRO1=1
       expect(rule).to be_an_instance_of(Makefile::SuffixRule)
       expect(rule.source).to eq(".c")
       expect(rule.target).to eq(".o")
-      expect(rule.commands).to have(1).element
+      expect(rule.commands.size).to eq(1)
       expect(rule.commands[0]).to eq(
-        Makefile::Command.new("$(CC) -c -o $@ $<", rule))
+        Makefile::Command.new("$(CC) -c -o $@ $<\n", rule))
     end
 
     it "skips comments" do

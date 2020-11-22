@@ -1,2 +1,1 @@
 require 'rspec'
-require 'rr'
