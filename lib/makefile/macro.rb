@@ -1,10 +1,16 @@
-module Makefile; end
+require 'makefile/expression'
 
-class Makefile::Macro
-  def initialize(name, raw_value)
-    @name = name
-    @raw_value = raw_value
-    #TODO(yugui) parse value
+module Makefile
+  class Macro
+    def initialize(name, raw_value)
+      @name = name
+      @raw_value = raw_value
+      @value = Expression.new(raw_value)
+    end
+    attr_reader :name, :raw_value, :value
+
+    def expand(macroset)
+      value.evaluate(macroset)
+    end
   end
-  attr_reader :name, :raw_value
 end
