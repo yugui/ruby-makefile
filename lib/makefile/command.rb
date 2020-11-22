@@ -4,32 +4,18 @@ module Makefile
   class Command
     def initialize(raw_cmd, rule)
       @rule = rule
-      @argv = Shellwords.split(raw_cmd).map do |arg|
-        arg
-      end
+      @raw_cmd = raw_cmd
+      @cmd = Expression.new(raw_cmd)
     end
+
+    attr_reader :rule, :raw_cmd, :cmd
 
     def ==(rhs)
-      self.rule == rhs.rule and self.argv == rhs.argv
+      self.rule == rhs.rule and self.raw_cmd == rhs.raw_cmd
     end
 
-    protected
-    attr_reader :rule, :argv
-  end
-
-  class Command::Literal < String
-    def expand(rule, macroset)
-      to_s
-    end
-  end
-
-  class Command::MacroRef
-    def initialize(source)
-    end
-  end
-
-  class Command::Concat
-    def initialize(source)
+    def argv(macroset)
+      Shellwords.split(cmd.evaluate(macroset))
     end
   end
 end
