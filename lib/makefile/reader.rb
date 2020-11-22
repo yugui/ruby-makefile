@@ -1,4 +1,5 @@
 require 'makefile/command'
+require 'makefile/target'
 require 'makefile/errors'
 
 class Makefile::Reader
@@ -27,6 +28,8 @@ class Makefile::Reader
         yield Makefile::Macro.new($1, $2)
       when /^(\.[^.]+)(\.[^.]+)?:$/
         rule = Makefile::SuffixRule.new($1, $2)
+      when /^(.+):(.*)$/
+        rule = Makefile::Target.new($1, raw_deps: $2.strip)
       else
         raise NotImplementedError
       end

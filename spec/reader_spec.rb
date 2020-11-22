@@ -47,6 +47,21 @@ MACRO1=1
         Makefile::Command.new("$(CC) -c -o $@ $<\n", rule))
     end
 
+    it 'returns a Target object on reading a target definition' do
+      input = create_input_stub(<<-EOF.lines)
+foo: bar$(EXT) baz
+	$(CC) -c -o foo bar baz
+      EOF
+
+      target, = *Makefile::Reader.new(input).read
+      expect(target).to be_an_instance_of(Makefile::Target)
+      expect(target.name).to eq('foo')
+      expect(target.raw_deps).to eq(['bar$(EXT) baz'])
+      expect(target.commands.size).to eq(1)
+      expect(target.commands[0]).to eq(
+        Makefile::Command.new("$(CC) -c -o foo bar baz\n", target))
+    end
+
     it "skips comments" do
       input = create_input_stub(<<-EOF.lines)
 MACRO1=1# test
