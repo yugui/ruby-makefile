@@ -50,5 +50,17 @@ describe Makefile::Expression do
 
       expect(result).to eq('ACDG')
     end
+
+    it 'expands $$ to $' do
+      expr = Makefile::Expression.new('$${A}')
+      result = expr.evaluate(
+        'A' => 'a',
+      )
+
+      expect(result).to eq('${A}')
+    end
+
+    it 'expands only once' do
+    end
   end
 end

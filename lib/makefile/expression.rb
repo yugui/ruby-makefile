@@ -16,8 +16,12 @@ module Makefile
 
     def evaluate(macroset)
       raw_text.gsub(MACRO_REF_PATTERN) do
-        name = $1 || $2 || $3
-        macroset[name]&.expand(macroset)
+        if $3 == '$'
+          '$'
+        else
+          name = $1 || $2 || $3
+          macroset[name]&.expand(macroset)
+        end
       end
     end
   end
