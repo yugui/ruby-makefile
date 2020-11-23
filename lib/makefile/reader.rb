@@ -49,7 +49,7 @@ class Makefile::Reader
       fragment = @input.read_line
       fragment = fragment.sub(/#.*$/, '')
       line << fragment
-    end while !@input.eof? and line.end_with?('\\')
+    end while !@input.eof? and line.sub!(/\\\r?\n?/, ' ')
     return line
   end
 

@@ -50,6 +50,20 @@ MACRO4 \t\v=\t\v 4
       end
     end
 
+    it "reads multiline macro" do
+      input = create_input_stub(<<-EOF.lines)
+MACRO1=1 \\
+\t2 \\
+\v3 \\
+ 4
+      EOF
+
+      macro, = *Makefile::Reader.new(input).read
+      expect(macro).to be_an_instance_of(Makefile::Macro)
+      expect(macro.name).to eq("MACRO1")
+      expect(macro.raw_value).to eq("1  \t2  \v3   4")
+    end
+
     it "returns a SuffixRule object on read a rule definition" do
       input = create_input_stub(<<-EOF.lines)
 .c.o:
@@ -63,6 +77,21 @@ MACRO4 \t\v=\t\v 4
       expect(rule.commands.size).to eq(1)
       expect(rule.commands[0]).to eq(
         Makefile::Command.new("$(CC) -c -o $@ $<\n"))
+    end
+
+    it "reads multiline command" do
+      input = create_input_stub(<<-EOF.lines)
+.c.o:
+\t$(ECHO) \\
+1 \\
+\t2 \\
+\v3
+      EOF
+
+      rule, = *Makefile::Reader.new(input).read
+      expect(rule.commands.size).to eq(1)
+      expect(rule.commands[0]).to eq(
+        Makefile::Command.new("$(ECHO)  1  \t2  \v3\n"))
     end
 
     it 'returns a Target object on reading a target definition' do
