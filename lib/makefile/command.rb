@@ -14,7 +14,8 @@ module Makefile
     end
 
     def argv(target, macroset)
-      Shellwords.split(cmd.evaluate(target, macroset))
+      args = cmd.evaluate(target, macroset).sub(/\A@/, '')
+      Shellwords.split(args)
     end
   end
 end

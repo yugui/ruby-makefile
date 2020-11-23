@@ -34,5 +34,15 @@ describe Makefile::Command do
         'A' => Makefile::Macro.new('A') { 'a' },
       )
     end
+
+    it "ignores silence marker" do
+      cmd = Makefile::Command.new("$(Q)echo 1")
+      argv = cmd.argv(
+        double('target'),
+        'Q' => Makefile::Macro.new('Q', '@'),
+      )
+
+      expect(argv).to eq(%w[ echo 1 ])
+    end
   end
 end
