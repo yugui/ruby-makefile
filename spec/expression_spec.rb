@@ -51,6 +51,23 @@ describe Makefile::Expression do
       expect(result).to eq('ACDG')
     end
 
+    it 'raises an exception on self-recursion' do
+      expr = Makefile::Expression.new('$A')
+      expect {
+        expr.evaluate('A' => Makefile::Macro.new('A', '_${A}'))
+      }.to raise_error(Makefile::Error)
+    end
+
+    it 'raises an exception on mutual recursion' do
+      expr = Makefile::Expression.new('$A')
+      expect {
+        expr.evaluate(
+          'A' => Makefile::Macro.new('A', '_${B}'),
+          'B' => Makefile::Macro.new('B', '-${A}'),
+        )
+      }.to raise_error(Makefile::Error)
+    end
+
     it 'expands $$ to $' do
       expr = Makefile::Expression.new('$${A}')
       result = expr.evaluate(
@@ -61,6 +78,15 @@ describe Makefile::Expression do
     end
 
     it 'expands only once' do
+      expr = Makefile::Expression.new('$T')
+      result = expr.evaluate(
+        'M' => Makefile::Macro.new('M', '$$'),
+        'N' => Makefile::Macro.new('N', '(S)'),
+        'S' => Makefile::Macro.new('S', '1'),
+        'T' => Makefile::Macro.new('T', '$(M)$(N)'),
+      )
+
+      expect(result).to eq('$(S)')
     end
   end
 end
