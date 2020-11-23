@@ -32,6 +32,24 @@ MACRO1=1
       expect(macro.raw_value).to eq("1")
     end
 
+    it 'ignores whitespaces around macro assignment' do
+      input = create_input_stub(<<-EOF.lines)
+MACRO1 =1
+MACRO2= 2
+MACRO3 = 3
+MACRO4 \t\v=\t\v 4
+      EOF
+
+      macros = Makefile::Reader.new(input).read
+      expect(macros).to all(be_an_instance_of(Makefile::Macro))
+      expect(macros.size).to be(4)
+
+      macros.each.with_index do |macro, i|
+        expect(macro.name).to eq("MACRO#{i+1}")
+        expect(macro.raw_value).to eq("#{i+1}")
+      end
+    end
+
     it "returns a SuffixRule object on read a rule definition" do
       input = create_input_stub(<<-EOF.lines)
 .c.o:

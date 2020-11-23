@@ -24,7 +24,7 @@ class Makefile::Reader
       end
 
       case line
-      when /\A([[:alpha:]][[:alnum:]]*)=(.*)$/
+      when /\A([[:alpha:]][[:alnum:]]*)\s*=\s*(.*)$/
         yield Makefile::Macro.new($1, $2)
       when /^(\.[^.]+)(\.[^.]+)?:$/
         rule = Makefile::SuffixRule.new($1, $2)
