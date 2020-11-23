@@ -1,0 +1,11 @@
+language: ruby
+dist: xenial
+script: bundle exec rake spec
+
+matrix:
+  include:
+  - os: linux
+    rvm: 2.7.2
+  - os: osx
+    rvm: 2.7.2
+  fast_finish: true
