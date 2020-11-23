@@ -1,6 +1,14 @@
 # Makefile
 
-TODO: Write a gem description
+An incomplete implementation of Makefile parser.
+
+It supports a subset of GNU Make's syntax.
+
+## Project Status
+
+Pre-alpha. APIs can change without notice or backward compatibility.
+
+The current priority is to parse CRuby's makefiles.
 
 ## Installation
 
