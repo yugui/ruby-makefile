@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["yugui@yugui.jp"]
   spec.description   = %q{Makefile parser}
   spec.summary       = %q{Makefile parser}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/yugui/ruby-makefile"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
