@@ -24,14 +24,14 @@ class Makefile::Reader
       end
 
       case line
-      when /\A([[:alpha:]][[:alnum:]]*)\s*=\s*(.*)$/
+      when /\A([[:alpha:]_.][[:alnum:]_.-]*)\s*=\s*(.*)$/
         yield Makefile::Macro.new($1, $2)
       when /^(\.[^.]+)(\.[^.]+)?:$/
         rule = Makefile::SuffixRule.new($1, $2)
       when /^(.+):(.*)$/
         rule = Makefile::Target.new($1, raw_deps: $2.strip)
       else
-        raise NotImplementedError
+        raise NotImplementedError, "Unrecognized line #{line.dump} at #{lineno}"
       end
     end
     yield rule if rule
