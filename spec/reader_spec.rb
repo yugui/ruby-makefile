@@ -6,7 +6,7 @@ describe Makefile::Reader do
     lines = lines.dup
     input = double('input')
     allow(input).to receive(:eof?) { lines.empty? }
-    allow(input).to receive(:read_line) { lines.shift }
+    allow(input).to receive(:readline) { lines.shift }
     input
   end
 
@@ -14,8 +14,8 @@ describe Makefile::Reader do
     eof = false
     input = double('input')
     allow(input).to receive(:eof?) { eof }
-    expect(input).to receive(:read_line) { "a=b\n" }
-    expect(input).to receive(:read_line) { eof = true; "b=c" }
+    expect(input).to receive(:readline) { "a=b\n" }
+    expect(input).to receive(:readline) { eof = true; "b=c" }
 
     Makefile::Reader.new(input).read
   end

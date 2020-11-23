@@ -46,7 +46,7 @@ class Makefile::Reader
     return nil if @input.eof?
     line = ""
     begin
-      fragment = @input.read_line
+      fragment = @input.readline
       fragment = fragment.sub(/#.*$/, '')
       line << fragment
     end while !@input.eof? and line.sub!(/\\\r?\n?/, ' ')
