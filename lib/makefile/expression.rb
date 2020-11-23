@@ -3,9 +3,13 @@ require 'set'
 module Makefile
   MACRO_REF_PATTERN = %r!
     \$ (?:
-      \( ([^)]+) \) |
-       { ([^}]+) }  |
-         ([^({])
+      \(
+        (?<paren> [^:)]+ ) (?: :(?<paren_subst>[^=]+) = (?<paren_substval>[^)]*) )?
+      \) |
+      {
+        (?<brace> [^:}]+ ) (?: :(?<brace_subst>[^=]+) = (?<brace_substval>[^}]*) )?
+      }  |
+        (?<single> [^({] )
     )
   !x
 
@@ -26,15 +30,30 @@ module Makefile
     # Others should use #evaluate
     def evaluate_internal(target, macroset, parent_refs)
       raw_text.gsub(MACRO_REF_PATTERN) do
-        if $3
-          name, type = $3, :single
+        match = $~
+        case
+        when match[:single]
+          type, name = :single, $~[:single]
+        when match[:paren]
+          type = :quoted
+          name = match[:paren]
+          substpat, substexpr = match[:paren_subst], match[:paren_substval]
+        when match[:brace]
+          type = :quoted
+          name = match[:brace]
+          substpat, substexpr = match[:brace_subst], match[:brace_substval]
         else
-          name, type = $1 || $2, :quoted
+          raise 'never reach'
         end
 
         macro = macroset[name]
         if macro&.match?(type)
-          macro&.expand_internal(target, macroset, parent_refs)
+          expanded = macro.expand_internal(target, macroset, parent_refs)
+          next expanded unless substpat
+
+          replacement = Expression.new(substexpr).
+            evaluate_internal(target, macroset, parent_refs)
+          expanded.gsub(/#{Regexp.escape substpat}(?=\s|$)/, replacement)
         end
       end
     end

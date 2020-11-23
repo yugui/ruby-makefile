@@ -132,5 +132,40 @@ describe Makefile::Expression do
       expect(called).to be_truthy
       expect(result).to eq('abcde')
     end
+
+    it 'substitutes on macro expansion' do
+      expr = Makefile::Expression.new('$A')
+      result = expr.evaluate(
+        double('target'),
+        'A' => Makefile::Macro.new('A', '$(B:.S=.o)'),
+        'B' => Makefile::Macro.new('B', '$(C:.c=.S)'),
+        'C' => Makefile::Macro.new('C', "foo.c bar.c\tbaz.c\vqux.c"),
+      )
+
+      expect(result).to eq("foo.o bar.o\tbaz.o\vqux.o")
+    end
+
+    it 'evaluates replacement text on expansion' do
+      expr = Makefile::Expression.new('$A')
+      result = expr.evaluate(
+        double('target'),
+        'A' => Makefile::Macro.new('A', '$(B:.c=$S)'),
+        'B' => Makefile::Macro.new('B', "foo.c bar.c\tbaz.c\vqux.c"),
+        'S' => Makefile::Macro.new('S', '${T}'),
+        'T' => Makefile::Macro.new('T', '.o'),
+      )
+
+      expect(result).to eq("foo.o bar.o\tbaz.o\vqux.o")
+    end
+
+    it 'replace patterns only before whitespace' do
+      expr = Makefile::Expression.new('$(A:abc=123)')
+      result = expr.evaluate(
+        double('target'),
+        '$' => Makefile::Macro.new('$', '$', allow_quoted: false),
+        'A' => Makefile::Macro.new('A', "abc.abc abc-abc\tabc$$abc\vabc")
+      )
+      expect(result).to eq("abc.123 abc-123\tabc$123\v123")
+    end
   end
 end
