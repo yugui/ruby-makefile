@@ -62,7 +62,7 @@ MACRO4 \t\v=\t\v 4
       expect(rule.target).to eq(".o")
       expect(rule.commands.size).to eq(1)
       expect(rule.commands[0]).to eq(
-        Makefile::Command.new("$(CC) -c -o $@ $<\n", rule))
+        Makefile::Command.new("$(CC) -c -o $@ $<\n"))
     end
 
     it 'returns a Target object on reading a target definition' do
@@ -77,7 +77,7 @@ foo: bar$(EXT) baz
       expect(target.raw_deps).to eq(['bar$(EXT) baz'])
       expect(target.commands.size).to eq(1)
       expect(target.commands[0]).to eq(
-        Makefile::Command.new("$(CC) -c -o foo bar baz\n", target))
+        Makefile::Command.new("$(CC) -c -o foo bar baz\n"))
     end
 
     it "skips comments" do

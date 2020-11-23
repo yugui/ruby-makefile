@@ -9,13 +9,13 @@ class Makefile::Reader
     @input = input
   end
 
-  def each(&blk)
+  def each
     rule = nil
     while line = read_line
       next if line.chomp.empty?
       if line.start_with?("\t")
         raise Makefile::ParseError, "commands outside of rule at line #{lineno}" unless rule
-        command = Makefile::Command.new(line[1..-1], rule)
+        command = Makefile::Command.new(line[1..-1])
         rule.add_command(command)
         next
       else

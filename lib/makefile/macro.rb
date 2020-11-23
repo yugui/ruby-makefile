@@ -2,28 +2,41 @@ require 'makefile/expression'
 
 module Makefile
   class Macro
-    def initialize(name, raw_value)
+    def initialize(name, raw_value = nil, allow_single: true, allow_quoted: true, &block)
+      raise ArgumentError.new('either raw_value or block must be given') unless \
+        raw_value or block
+
       @name = name
       @raw_value = raw_value
-      @value = Expression.new(raw_value)
+      @value = Expression.new(raw_value) if raw_value
+      @allow_single = allow_single
+      @allow_quoted = allow_quoted
+      @block = block
     end
     attr_reader :name, :raw_value, :value
 
-    def expand(macroset)
-      expand_internal(macroset, Set.new)
+    def match?(type)
+      case type
+      when :single
+        return @allow_single
+      when :quoted
+        return @allow_quoted
+      else
+        raise ArgumentError.new('must be :single or :quoted')
+      end
     end
 
     # Shows some implementation details of #expand
     #
     # Only Makefile::Expression is allowed to call this method.
-    # Others should use #expand.
-    def expand_internal(macroset, parent_refs)
+    def expand_internal(target, macroset, parent_refs)
       raise Makefile::Error.new("Macro #{name} references itself") \
         if parent_refs.include?(name)
 
       parent_refs << name
       begin
-        value.evaluate_internal(macroset, parent_refs)
+        expr = value || Expression.new(@block.call(target, macroset))
+        expr.evaluate_internal(target, macroset, parent_refs)
       ensure
         parent_refs.delete name
       end

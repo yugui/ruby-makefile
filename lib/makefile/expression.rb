@@ -16,21 +16,25 @@ module Makefile
     end
     attr_reader :raw_text
 
-    def evaluate(macroset)
-      evaluate_internal(macroset, Set.new)
+    def evaluate(target=nil, macroset)
+      evaluate_internal(target, macroset, Set.new)
     end
 
     # Shows some implementation details of #evaluate
     #
     # Only Makefile::Macro is allowed to call this method.
     # Others should use #evaluate
-    def evaluate_internal(macroset, parent_refs)
+    def evaluate_internal(target, macroset, parent_refs)
       raw_text.gsub(MACRO_REF_PATTERN) do
-        if $3 == '$'
-          '$'
+        if $3
+          name, type = $3, :single
         else
-          name = $1 || $2 || $3
-          macroset[name]&.expand_internal(macroset, parent_refs)
+          name, type = $1 || $2, :quoted
+        end
+
+        macro = macroset[name]
+        if macro&.match?(type)
+          macro&.expand_internal(target, macroset, parent_refs)
         end
       end
     end
