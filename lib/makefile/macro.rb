@@ -29,6 +29,8 @@ module Makefile
     # Shows some implementation details of #expand
     #
     # Only Makefile::Expression is allowed to call this method.
+    #
+    # @private
     def expand_internal(target, macroset, parent_refs)
       raise Makefile::Error, "Macro #{name} references itself" \
         if parent_refs.include?(name)

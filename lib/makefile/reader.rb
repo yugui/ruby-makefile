@@ -5,10 +5,12 @@ require 'makefile/errors'
 class Makefile::Reader
   include Enumerable
 
+  # @param input [#each_line] Reads a Makefile from this source.
   def initialize(input)
     @input = input
   end
 
+  # @yieldparam [Macro, SuffixRule, Target] a top-level construct of makefile
   def each
     rule = nil
     each_logical_line do |line|

@@ -28,6 +28,8 @@ module Makefile
     #
     # Only Makefile::Macro is allowed to call this method.
     # Others should use #evaluate
+    #
+    # @private
     def evaluate_internal(target, macroset, parent_refs)
       raw_text.gsub(MACRO_REF_PATTERN) do
         match = $~
