@@ -1,25 +1,22 @@
 module Makefile
   class Target
-    def initialize(name, raw_deps: nil, commands: [])
+    def initialize(macroset, name, raw_deps: nil, commands: [])
+      @macroset = macroset
       @name = name
-      if raw_deps
-        @raw_deps = [raw_deps]
-        @deps = [Expression.new(raw_deps)]
-      else
-        @raw_deps, @deps = [], []
-      end
+      @raw_deps, @deps = [], []
+      add_dependency(raw_deps) if raw_deps
       @commands = commands
     end
 
     attr_reader :name, :raw_deps, :commands
 
-    def deps(macroset)
-      @deps.map {|expr| expr.evaluate(macroset).split(/\s+/) }.flatten
+    def deps
+      @deps.map {|expr| expr.evaluate(@macroset).strip.split(/\s+/) }.flatten
     end
 
     def add_dependency(raw_deps)
       @raw_deps << raw_deps
-      @deps << Expression.new(raw_deps)
+      @deps << Expression.new(@macroset, raw_deps)
     end
 
     def add_command(command)

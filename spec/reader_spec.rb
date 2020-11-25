@@ -12,15 +12,13 @@ describe Makefile::Reader do
   end
 
   describe "#each" do
-    it "returns a Macro object on read a macro" do
+    it "accepts a macro" do
       input = StringIO.new(<<-EOF)
 MACRO1=1
       EOF
 
       macro, = *Makefile::Reader.new(input).read
-      expect(macro).to be_an_instance_of(Makefile::Macro)
-      expect(macro.name).to eq("MACRO1")
-      expect(macro.raw_value).to eq("1")
+      expect(macro).to eq([:macro, "MACRO1", "1"])
     end
 
     it 'ignores whitespaces around macro assignment' do
@@ -32,42 +30,46 @@ MACRO4 \t\v=\t\v 4
       EOF
 
       macros = Makefile::Reader.new(input).read
-      expect(macros).to all(be_an_instance_of(Makefile::Macro))
+      expect(macros).to all(respond_to(:to_ary))
       expect(macros.size).to be(4)
 
       macros.each.with_index do |macro, i|
-        expect(macro.name).to eq("MACRO#{i+1}")
-        expect(macro.raw_value).to eq("#{i+1}")
+        expect(macro).to eq([:macro, "MACRO#{i+1}", "#{i+1}"])
       end
     end
 
     it "reads multiline macro" do
       input = StringIO.new(<<-EOF)
 MACRO1=1 \\
-\t2 \\
-\v3 \\
- 4
+\t2\t\t\\
+\v3\v\v\\
+ 4 \t\v
       EOF
 
       macro, = *Makefile::Reader.new(input).read
-      expect(macro).to be_an_instance_of(Makefile::Macro)
-      expect(macro.name).to eq("MACRO1")
-      expect(macro.raw_value).to eq("1  \t2  \v3   4")
+      expect(macro).to eq([:macro, "MACRO1", "1 2 3 4 \t\v"])
     end
 
-    it "returns a SuffixRule object on read a rule definition" do
+    it "accepts a suffix rule" do
       input = StringIO.new(<<-EOF)
 .c.o:
 	$(CC) -c -o $@ $<
       EOF
 
-      rule, = *Makefile::Reader.new(input).read
-      expect(rule).to be_an_instance_of(Makefile::SuffixRule)
-      expect(rule.source).to eq(".c")
-      expect(rule.target).to eq(".o")
-      expect(rule.commands.size).to eq(1)
-      expect(rule.commands[0]).to eq(
-        Makefile::Command.new("$(CC) -c -o $@ $<\n"))
+      rule, command = *Makefile::Reader.new(input).read
+      expect(rule).to eq([:suffix_rule, ".c", ".o"])
+      expect(command).to eq([:command, "$(CC) -c -o $@ $<\n"])
+    end
+
+    it "accepts a suffix rule without target suffix" do
+      input = StringIO.new(<<-EOF)
+.c:
+	$(CC) -o $@ $<
+      EOF
+
+      rule, command = *Makefile::Reader.new(input).read
+      expect(rule).to eq([:suffix_rule, ".c", nil])
+      expect(command).to eq([:command, "$(CC) -o $@ $<\n"])
     end
 
     it "reads multiline command" do
@@ -76,28 +78,34 @@ MACRO1=1 \\
 \t$(ECHO) \\
 1 \\
 \t2 \\
-\v3
+\v3 \t\v
       EOF
 
-      rule, = *Makefile::Reader.new(input).read
-      expect(rule.commands.size).to eq(1)
-      expect(rule.commands[0]).to eq(
-        Makefile::Command.new("$(ECHO)  1  \t2  \v3\n"))
+      rule, command = *Makefile::Reader.new(input).read
+      expect(rule).to eq([:suffix_rule, ".c", ".o"])
+      expect(command).to eq([:command, "$(ECHO) 1 2 3 \t\v\n"])
     end
 
-    it 'returns a Target object on reading a target definition' do
+    it 'reads a target' do
+      input = StringIO.new(<<-EOF)
+foo: 
+\techo ok
+      EOF
+
+      target, command = *Makefile::Reader.new(input).read
+      expect(target).to eq([:target, 'foo', ''])
+      expect(command).to eq([:command, "echo ok\n"])
+    end
+
+    it 'reads a target with deps' do
       input = StringIO.new(<<-EOF)
 foo: bar$(EXT) baz
 	$(CC) -c -o foo bar baz
       EOF
 
-      target, = *Makefile::Reader.new(input).read
-      expect(target).to be_an_instance_of(Makefile::Target)
-      expect(target.name).to eq('foo')
-      expect(target.raw_deps).to eq(['bar$(EXT) baz'])
-      expect(target.commands.size).to eq(1)
-      expect(target.commands[0]).to eq(
-        Makefile::Command.new("$(CC) -c -o foo bar baz\n"))
+      target, command = *Makefile::Reader.new(input).read
+      expect(target).to eq([:target, 'foo', 'bar$(EXT) baz'])
+      expect(command).to eq([:command, "$(CC) -c -o foo bar baz\n"])
     end
 
     it "skips comments" do
@@ -106,12 +114,9 @@ MACRO1=1# test
 # MACRO2=2
       EOF
 
-      iter = Makefile::Reader.new(input).enum_for(:each)
-      macro = iter.next
-      expect(macro).to be_an_instance_of(Makefile::Macro)
-      expect(macro.name).to eq("MACRO1")
-      expect(macro.raw_value).to eq("1")
-      expect { iter.next }.to raise_error(StopIteration)
+      constructs = Makefile::Reader.new(input).read
+      expect(constructs.size).to eq(1)
+      expect(constructs.first).to eq([:macro, "MACRO1", "1"])
     end
   end
 end

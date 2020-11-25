@@ -4,4 +4,5 @@ module Makefile
   require "makefile/macro"
   require "makefile/suffix_rule"
   require "makefile/reader"
+  require "makefile/parser"
 end

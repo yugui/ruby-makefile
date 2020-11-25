@@ -2,9 +2,9 @@ require 'shellwords'
 
 module Makefile
   class Command
-    def initialize(raw_cmd)
+    def initialize(macroset, raw_cmd)
       @raw_cmd = raw_cmd
-      @cmd = Expression.new(raw_cmd)
+      @cmd = Expression.new(macroset, raw_cmd)
     end
 
     attr_reader :raw_cmd, :cmd
@@ -13,8 +13,8 @@ module Makefile
       self.raw_cmd == rhs.raw_cmd
     end
 
-    def argv(target, macroset)
-      args = cmd.evaluate(target, macroset).sub(/\A@/, '')
+    def argv(target)
+      args = cmd.evaluate(target).sub(/\A@/, '')
       Shellwords.split(args)
     end
   end

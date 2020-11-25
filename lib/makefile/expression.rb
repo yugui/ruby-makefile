@@ -15,13 +15,14 @@ module Makefile
 
   # An expression which can contain macro reference
   class Expression
-    def initialize(raw_text)
+    def initialize(macroset, raw_text)
+      @macroset = macroset
       @raw_text = raw_text
     end
     attr_reader :raw_text
 
-    def evaluate(target=nil, macroset)
-      evaluate_internal(target, macroset, Set.new)
+    def evaluate(target=nil)
+      evaluate_internal(target, Set.new)
     end
 
     # Shows some implementation details of #evaluate
@@ -30,7 +31,7 @@ module Makefile
     # Others should use #evaluate
     #
     # @private
-    def evaluate_internal(target, macroset, parent_refs)
+    def evaluate_internal(target, parent_refs)
       raw_text.gsub(MACRO_REF_PATTERN) do
         match = $~
         case
@@ -48,13 +49,13 @@ module Makefile
           raise 'never reach'
         end
 
-        macro = macroset[name]
+        macro = @macroset[name]
         if macro&.match?(type)
-          expanded = macro.expand_internal(target, macroset, parent_refs)
+          expanded = macro.expand_internal(target, parent_refs)
           next expanded unless substpat
 
-          replacement = Expression.new(substexpr).
-            evaluate_internal(target, macroset, parent_refs)
+          replacement =
+            Expression.new(@macroset, substexpr).evaluate_internal(target, parent_refs)
           expanded.gsub(/#{Regexp.escape substpat}(?=\s|$)/, replacement)
         end
       end
