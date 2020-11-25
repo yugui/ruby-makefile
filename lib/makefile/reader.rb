@@ -11,7 +11,7 @@ class Makefile::Reader
 
   def each
     rule = nil
-    while line = read_line
+    each_logical_line do |line|
       next if line.chomp.empty?
       if line.start_with?("\t")
         raise Makefile::ParseError, "commands outside of rule at line #{lineno}" unless rule
@@ -37,23 +37,30 @@ class Makefile::Reader
     yield rule if rule
   end
 
+  # @return [Array<Macro, SuffixRule, Target>] top-level constructs of the makefile.
   def read
     to_a
   end
 
   private
-  def read_line
-    return nil if @input.eof?
+  def each_logical_line
     line = ""
-    begin
-      fragment = @input.readline
+    @input.each_line do |fragment|
       fragment = fragment.sub(/#.*$/, '')
       line << fragment
-    end while !@input.eof? and line.sub!(/\\\r?\n?/, ' ')
-    return line
+      unless line.sub!(/\\\r?\n?/, ' ')
+        yield line
+        line = ""
+      end
+    end
+    yield line unless line.empty?
   end
 
   def lineno
-    @input.lineno
+    if @input.respond_to?(:lineno)
+      @input.lineno
+    else
+      '(unknown)'
+    end
   end
 end

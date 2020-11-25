@@ -1,28 +1,19 @@
 require_relative "spec_helper"
 require 'makefile'
 
-describe Makefile::Reader do
-  def create_input_stub(lines)
-    lines = lines.dup
-    input = double('input')
-    allow(input).to receive(:eof?) { lines.empty? }
-    allow(input).to receive(:readline) { lines.shift }
-    input
-  end
+require 'stringio'
 
+describe Makefile::Reader do
   it "reads input with #read_line" do
-    eof = false
     input = double('input')
-    allow(input).to receive(:eof?) { eof }
-    expect(input).to receive(:readline) { "a=b\n" }
-    expect(input).to receive(:readline) { eof = true; "b=c" }
+    expect(input).to receive(:each_line).and_yield("a=b").and_yield("b=c")
 
     Makefile::Reader.new(input).read
   end
 
   describe "#each" do
     it "returns a Macro object on read a macro" do
-      input = create_input_stub(<<-EOF.lines)
+      input = StringIO.new(<<-EOF)
 MACRO1=1
       EOF
 
@@ -33,7 +24,7 @@ MACRO1=1
     end
 
     it 'ignores whitespaces around macro assignment' do
-      input = create_input_stub(<<-EOF.lines)
+      input = StringIO.new(<<-EOF)
 MACRO1 =1
 MACRO2= 2
 MACRO3 = 3
@@ -51,7 +42,7 @@ MACRO4 \t\v=\t\v 4
     end
 
     it "reads multiline macro" do
-      input = create_input_stub(<<-EOF.lines)
+      input = StringIO.new(<<-EOF)
 MACRO1=1 \\
 \t2 \\
 \v3 \\
@@ -65,7 +56,7 @@ MACRO1=1 \\
     end
 
     it "returns a SuffixRule object on read a rule definition" do
-      input = create_input_stub(<<-EOF.lines)
+      input = StringIO.new(<<-EOF)
 .c.o:
 	$(CC) -c -o $@ $<
       EOF
@@ -80,7 +71,7 @@ MACRO1=1 \\
     end
 
     it "reads multiline command" do
-      input = create_input_stub(<<-EOF.lines)
+      input = StringIO.new(<<-EOF)
 .c.o:
 \t$(ECHO) \\
 1 \\
@@ -95,7 +86,7 @@ MACRO1=1 \\
     end
 
     it 'returns a Target object on reading a target definition' do
-      input = create_input_stub(<<-EOF.lines)
+      input = StringIO.new(<<-EOF)
 foo: bar$(EXT) baz
 	$(CC) -c -o foo bar baz
       EOF
@@ -110,7 +101,7 @@ foo: bar$(EXT) baz
     end
 
     it "skips comments" do
-      input = create_input_stub(<<-EOF.lines)
+      input = StringIO.new(<<-EOF)
 MACRO1=1# test
 # MACRO2=2
       EOF
